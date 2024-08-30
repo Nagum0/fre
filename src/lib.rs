@@ -71,26 +71,21 @@ impl Fre {
             self.recursive_mode();
         // Single mode:
         } else {
-            self.single_mode();
-        }
-    }
-
-    fn single_mode(&self) {
-        let transformed_contents =
-            utils::transform_file_contents(&self.path, &self.pattern, &self.replace);
-
-        // -e Edit flag is set:
-        if self.config.edit {
-            utils::edit_file(&self.path, transformed_contents);
-        }
-        // -e Edit flag is not set:
-        else {
-            println!("{}", transformed_contents);
+            utils::transform_file_contents(
+                &self.path,
+                &self.pattern,
+                &self.replace,
+                self.config.edit,
+                self.config.delete,
+            );
         }
     }
 
     fn recursive_mode(&self) {
-        todo!("Recursive mode not implemented!");
+        let xs = utils::collect_files(&self.path, false);
+        for x in xs {
+            println!("{:?}", x);
+        }
     }
 
     fn recursive_full_mode(&self) {

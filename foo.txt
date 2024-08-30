@@ -1,2 +1,3 @@
-OsString OsString OsString
-String String String
+Astolfo Ferris Echidna
+Hades Astolfo Ferris
+Kaneki Gojo Sukuna

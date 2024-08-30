@@ -37,22 +37,29 @@ pub fn transform_file_contents(
     }
 }
 
+/// Collects the file paths as OsStrings from a given directory into a vector.
+/// * Parameters
+///     * path: Path to the directory.
+///     * full: If true will recursively collect the file paths from all the subdirectories too.
+///     Otherwise it will print 'fre: \<path\>: is directory'.
 pub fn collect_files(path: &OsString, full: bool) -> Vec<OsString> {
     let dir = fs::read_dir(path).unwrap();
-
-    // -rf flag is set:
-    if full {
-        todo!("Full recursive search not implemented!");
-    }
 
     dir.fold(Vec::new(), |mut acc, entry| {
         let entry = entry.unwrap();
         let entry_type = entry.file_type().unwrap();
+        let path = entry.path().as_os_str().to_os_string();
 
         if entry_type.is_dir() {
-            println!("fre: {:?} is directory", entry.path().as_os_str());
+            if !full {
+                println!("fre: {:?}: is directory", entry.path().as_os_str());
+            }
+            // -rf flag is set:
+            else {
+                acc.extend(collect_files(&path, full));
+            }
         } else {
-            acc.push(entry.path().as_os_str().to_os_string());
+            acc.push(path);
         }
 
         acc

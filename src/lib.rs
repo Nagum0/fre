@@ -62,15 +62,12 @@ impl Fre {
     }
 
     pub fn execute(&self) {
-        // Recursive full mode:
-        if self.config.recursive_full {
-            self.recursive_full_mode();
-        }
-        // Recursive mode:
-        else if self.config.recursive {
+        // Recursive (-r) or recursive full (-rf) mode:
+        if self.config.recursive || self.config.recursive_full {
             self.recursive_mode();
+        }
         // Single mode:
-        } else {
+        else {
             utils::transform_file_contents(
                 &self.path,
                 &self.pattern,
@@ -82,13 +79,20 @@ impl Fre {
     }
 
     fn recursive_mode(&self) {
-        let xs = utils::collect_files(&self.path, false);
-        for x in xs {
-            println!("{:?}", x);
-        }
-    }
+        let file_paths = utils::collect_files(&self.path, self.config.recursive_full);
 
-    fn recursive_full_mode(&self) {
-        todo!("Recursive full mode not implemented!");
+        for file_path in file_paths {
+            if !self.config.edit {
+                println!("{:?}:", file_path);
+            }
+
+            utils::transform_file_contents(
+                &file_path,
+                &self.pattern,
+                &self.replace,
+                self.config.edit,
+                self.config.delete,
+            );
+        }
     }
 }

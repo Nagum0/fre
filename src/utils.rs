@@ -1,4 +1,6 @@
-use std::{ffi::OsString, fs};
+use std::{ffi::OsString, fs, io::ErrorKind};
+
+use crate::fre_error::FreError;
 
 /// Transform the contents of a given file.
 /// * Parameters:
@@ -9,14 +11,17 @@ use std::{ffi::OsString, fs};
 ///     If not it will print the transformed result to stdout and doesn't touch the given file.
 ///     * delete: If this is true it will ignore the 'to' parameter and delete the line containing the matched
 ///     pattern.
-pub fn transform_file_contents(
-    file_path: &OsString,
+pub fn transform_file_contents<'a>(
+    file_path: &'a OsString,
     pattern: &String,
     replace: &String,
     edit: bool,
     delete: bool,
-) {
-    let mut file_contents = fs::read_to_string(file_path).unwrap();
+) -> Result<(), FreError<'a>> {
+    let mut file_contents = fs::read_to_string(file_path).map_err(|e| match e.kind() {
+        ErrorKind::InvalidData => FreError::InvalidData(file_path),
+        _ => FreError::FileError(file_path, "Error while reading file contents."),
+    })?;
 
     // -d flag is set:
     if delete {
@@ -35,6 +40,8 @@ pub fn transform_file_contents(
     } else {
         println!("{}", file_contents);
     }
+
+    Ok(())
 }
 
 /// Collects the file paths as OsStrings from a given directory into a vector.

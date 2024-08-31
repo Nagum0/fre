@@ -1,4 +1,4 @@
-use std::{error, ffi::OsString};
+use std::ffi::OsString;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

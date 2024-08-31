@@ -20,7 +20,8 @@ pub fn transform_file_contents<'a>(
 ) -> Result<(), FreError<'a>> {
     let mut file_contents = fs::read_to_string(file_path).map_err(|e| match e.kind() {
         ErrorKind::InvalidData => FreError::InvalidData(file_path),
-        _ => FreError::FileError(file_path, "Error while reading file contents."),
+        ErrorKind::NotFound => FreError::FileError(file_path, "File not found"),
+        _ => FreError::FileError(file_path, "Error while reading file contents"),
     })?;
 
     // -d flag is set:
@@ -36,7 +37,12 @@ pub fn transform_file_contents<'a>(
 
     // -e flag is set:
     if edit {
-        fs::write(file_path, file_contents).unwrap();
+        fs::write(file_path, file_contents).map_err(|e| match e.kind() {
+            ErrorKind::InvalidData => FreError::InvalidData(file_path),
+            ErrorKind::NotFound => FreError::FileError(file_path, "File not found"),
+            ErrorKind::PermissionDenied => FreError::FileError(file_path, "Premission denied"),
+            _ => FreError::FileError(file_path, "Error while reading file contents"),
+        })?;
     } else {
         println!("{}", file_contents);
     }

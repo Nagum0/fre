@@ -1,4 +1,5 @@
 pub mod config;
+pub mod fre_error;
 pub mod utils;
 
 use config::Config;

@@ -4,6 +4,7 @@ use fre::Fre;
 
 fn main() {
     let args = env::args();
+
     let fre = match Fre::from(args) {
         Ok(fre) => fre,
         Err(e) => {
@@ -11,5 +12,12 @@ fn main() {
             exit(1);
         }
     };
-    fre.execute();
+
+    match fre.execute() {
+        Ok(_) => {}
+        Err(e) => {
+            println!("{}", e);
+            exit(1);
+        }
+    }
 }

@@ -24,7 +24,7 @@ impl Fre {
         }
     }
 
-    pub fn from<'a>(mut args: env::Args) -> Result<Fre, FreError<'a>> {
+    pub fn from(mut args: env::Args) -> Result<Fre, FreError> {
         // Skip executable name:
         args.next();
 
@@ -63,10 +63,10 @@ impl Fre {
         Ok(fre)
     }
 
-    pub fn execute(&self) {
+    pub fn execute(&self) -> Result<(), FreError> {
         // Recursive (-r) or recursive full (-rf) mode:
         if self.config.recursive || self.config.recursive_full {
-            self.recursive_mode();
+            self.recursive_mode()?;
         }
         // Single mode:
         else {
@@ -81,10 +81,12 @@ impl Fre {
                 Err(e) => println!("{}", e),
             };
         }
+
+        Ok(())
     }
 
-    fn recursive_mode(&self) {
-        let file_paths = utils::collect_files(&self.path, self.config.recursive_full).unwrap();
+    fn recursive_mode(&self) -> Result<(), FreError> {
+        let file_paths = utils::collect_files(&self.path, self.config.recursive_full)?;
 
         for file_path in file_paths {
             if !self.config.edit {
@@ -102,5 +104,7 @@ impl Fre {
                 Err(e) => println!("{}", e),
             };
         }
+
+        Ok(())
     }
 }

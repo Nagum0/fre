@@ -25,7 +25,3 @@
   - Edit (Replace each matched pattern with the given text in place. Without this flag the result won't take effect in a file it will only print the result to stdout.)
 - -d
   - Delete (Delete all lines where the pattern matches.)
-
-### ISSUES
-
-- When using with the -d flag it adds an extra new line character to the last line of the file.

@@ -18,6 +18,18 @@ pub fn transform_file_contents<'a>(
     edit: bool,
     delete: bool,
 ) -> Result<(), FreError<'a>> {
+    // Getting file metadata:
+    let metadata = fs::metadata(file_path).map_err(|e| match e.kind() {
+        ErrorKind::NotFound => FreError::FileError(file_path, "File not found"),
+        _ => FreError::FileError(file_path, "Can't get file metadata"),
+    })?;
+
+    // If the given path is a directory:
+    if metadata.is_dir() {
+        return Err(FreError::FileError(file_path, "Is a directory"));
+    }
+
+    // Get the file contents:
     let mut file_contents = fs::read_to_string(file_path).map_err(|e| match e.kind() {
         ErrorKind::InvalidData => FreError::InvalidData(file_path),
         ErrorKind::NotFound => FreError::FileError(file_path, "File not found"),

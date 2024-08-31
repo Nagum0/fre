@@ -3,6 +3,7 @@ pub mod fre_error;
 pub mod utils;
 
 use config::Config;
+use fre_error::FreError;
 use std::{env, ffi::OsString};
 
 #[derive(Debug)]
@@ -23,7 +24,7 @@ impl Fre {
         }
     }
 
-    pub fn from(mut args: env::Args) -> Fre {
+    pub fn from<'a>(mut args: env::Args) -> Result<Fre, FreError<'a>> {
         // Skip executable name:
         args.next();
 
@@ -38,7 +39,7 @@ impl Fre {
                     "-rf" => fre.config.recursive_full = true,
                     "-e" => fre.config.edit = true,
                     "-d" => fre.config.delete = true,
-                    _ => panic!("Unknown flag: {}", arg),
+                    _ => return Err(FreError::UnknownFlagError(arg)),
                 }
             }
 
@@ -56,10 +57,10 @@ impl Fre {
 
         // Check if correct amount of arguments were passed:
         if arg_counter != 3 {
-            panic!("Expected 3 arguments but received: {}", arg_counter);
+            return Err(FreError::ArgError(3, arg_counter));
         }
 
-        fre
+        Ok(fre)
     }
 
     pub fn execute(&self) {
@@ -69,31 +70,37 @@ impl Fre {
         }
         // Single mode:
         else {
-            utils::transform_file_contents(
+            match utils::transform_file_contents(
                 &self.path,
                 &self.pattern,
                 &self.replace,
                 self.config.edit,
                 self.config.delete,
-            );
+            ) {
+                Ok(_) => {}
+                Err(e) => println!("{}", e),
+            };
         }
     }
 
     fn recursive_mode(&self) {
-        let file_paths = utils::collect_files(&self.path, self.config.recursive_full);
+        let file_paths = utils::collect_files(&self.path, self.config.recursive_full).unwrap();
 
         for file_path in file_paths {
             if !self.config.edit {
                 println!("{:?}:", file_path);
             }
 
-            utils::transform_file_contents(
+            match utils::transform_file_contents(
                 &file_path,
                 &self.pattern,
                 &self.replace,
                 self.config.edit,
                 self.config.delete,
-            );
+            ) {
+                Ok(_) => {}
+                Err(e) => println!("{}", e),
+            };
         }
     }
 }

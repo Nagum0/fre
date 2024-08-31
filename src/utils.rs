@@ -1,6 +1,6 @@
 use std::{ffi::OsString, fs, io::ErrorKind};
 
-use crate::{fre_error::FreError, Fre};
+use crate::fre_error::FreError;
 
 /// Transform the contents of a given file.
 /// * Parameters:

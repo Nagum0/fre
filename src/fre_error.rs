@@ -7,4 +7,6 @@ pub enum FreError<'a> {
     InvalidData(&'a OsString),
     #[error("fre: {:?}: FILE_ERROR: {}", ._0, ._1)]
     FileError(&'a OsString, &'a str),
+    #[error("fre: {:?}: DIRECTORY ERROR: {}", ._0, ._1)]
+    DirError(&'a OsString, &'a str),
 }

@@ -1,6 +1,6 @@
 use std::{ffi::OsString, fs, io::ErrorKind};
 
-use crate::fre_error::FreError;
+use crate::{fre_error::FreError, Fre};
 
 /// Transform the contents of a given file.
 /// * Parameters:
@@ -55,13 +55,18 @@ pub fn transform_file_contents<'a>(
 ///     * path: Path to the directory.
 ///     * full: If true will recursively collect the file paths from all the subdirectories too.
 ///     Otherwise it will print 'fre: \<path\>: is directory'.
-pub fn collect_files(path: &OsString, full: bool) -> Vec<OsString> {
-    let dir = fs::read_dir(path).unwrap();
+pub fn collect_files<'a>(path: &'a OsString, full: bool) -> Result<Vec<OsString>, FreError<'a>> {
+    let dir = fs::read_dir(path).map_err(|e| match e.kind() {
+        ErrorKind::InvalidInput => FreError::DirError(path, "Not a directory"),
+        _ => FreError::DirError(path, "Error while reading directory"),
+    })?;
 
-    dir.fold(Vec::new(), |mut acc, entry| {
-        let entry = entry.unwrap();
-        let entry_type = entry.file_type().unwrap();
-        let path = entry.path().as_os_str().to_os_string();
+    let mut files: Vec<OsString> = vec![];
+    for entry in dir {
+        let entry = entry.map_err(|_| FreError::FileError(path, "Unable to get entry"))?;
+        let entry_type = entry
+            .file_type()
+            .map_err(|_| FreError::FileError(path, "Unable to get file type"))?;
 
         if entry_type.is_dir() {
             if !full {
@@ -69,12 +74,12 @@ pub fn collect_files(path: &OsString, full: bool) -> Vec<OsString> {
             }
             // -rf flag is set:
             else {
-                acc.extend(collect_files(&path, full));
+                files.extend(collect_files(path, full)?);
             }
         } else {
-            acc.push(path);
+            files.push(entry.path().as_os_str().to_os_string());
         }
+    }
 
-        acc
-    })
+    Ok(files)
 }

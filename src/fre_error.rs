@@ -1,14 +1,15 @@
 use std::ffi::OsString;
+use std::rc::Rc;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum FreError {
     #[error("fre: {:?}: INVALID DATA", ._0)]
-    InvalidData(OsString),
+    InvalidData(Rc<OsString>),
     #[error("fre: {:?}: FILE ERROR: {}", ._0, ._1)]
-    FileError(OsString, &'static str),
+    FileError(Rc<OsString>, &'static str),
     #[error("fre: {:?}: DIRECTORY ERROR: {}", ._0, ._1)]
-    DirError(OsString, &'static str),
+    DirError(Rc<OsString>, &'static str),
     #[error("fre: ARGUMENT ERROR: Expected {} arguments but received {}", ._0, ._1)]
     ArgError(usize, usize),
     #[error("fre: UNKNOWN OPTION ERROR: {}", ._0)]

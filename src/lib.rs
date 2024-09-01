@@ -4,11 +4,13 @@ pub mod utils;
 
 use config::Config;
 use fre_error::FreError;
-use std::{env, ffi::OsString};
+use std::{env, ffi::OsString, rc::Rc};
 
+/// The path wrapped in an Rc because later I will need to copy the path for errors
+/// which would make everything expensive.
 #[derive(Debug)]
 pub struct Fre {
-    path: OsString,
+    path: Rc<OsString>,
     pattern: String,
     replace: String,
     config: Config,
@@ -17,7 +19,7 @@ pub struct Fre {
 impl Fre {
     pub fn new() -> Fre {
         Fre {
-            path: OsString::new(),
+            path: Rc::new(OsString::new()),
             pattern: String::new(),
             replace: String::new(),
             config: Config::new(),
@@ -50,7 +52,7 @@ impl Fre {
                 fre.replace = arg;
                 arg_counter += 1;
             } else if arg_counter == 2 {
-                fre.path = OsString::from(arg);
+                fre.path = Rc::new(OsString::from(arg));
                 arg_counter += 1;
             }
         }
@@ -71,7 +73,7 @@ impl Fre {
         // Single mode:
         else {
             match utils::transform_file_contents(
-                &self.path,
+                Rc::clone(&self.path),
                 &self.pattern,
                 &self.replace,
                 self.config.edit,
@@ -86,7 +88,7 @@ impl Fre {
     }
 
     fn recursive_mode(&self) -> Result<(), FreError> {
-        let file_paths = utils::collect_files(&self.path, self.config.recursive_full)?;
+        let file_paths = utils::collect_files(Rc::clone(&self.path), self.config.recursive_full)?;
 
         for file_path in file_paths {
             if !self.config.edit {
@@ -94,7 +96,7 @@ impl Fre {
             }
 
             match utils::transform_file_contents(
-                &file_path,
+                file_path,
                 &self.pattern,
                 &self.replace,
                 self.config.edit,

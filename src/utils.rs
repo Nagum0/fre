@@ -1,4 +1,4 @@
-use std::{ffi::OsString, fs, io::ErrorKind};
+use std::{ffi::OsString, fs, io::ErrorKind, rc::Rc};
 
 use crate::fre_error::FreError;
 
@@ -12,29 +12,34 @@ use crate::fre_error::FreError;
 ///     * delete: If this is true it will ignore the 'to' parameter and delete the line containing the matched
 ///     pattern.
 pub fn transform_file_contents(
-    file_path: &OsString,
+    file_path: Rc<OsString>,
     pattern: &String,
     replace: &String,
     edit: bool,
     delete: bool,
 ) -> Result<(), FreError> {
+    // I make a separate reference for the value of file_path because the `fs` functions
+    // expect a &OsString but the file_path holds a OsString:
+    let reference_to_file_path = &(*file_path);
+
     // Getting file metadata:
-    let metadata = fs::metadata(file_path).map_err(|e| match e.kind() {
-        ErrorKind::NotFound => FreError::FileError(file_path.clone(), "File not found"),
-        _ => FreError::FileError(file_path.clone(), "Can't get file metadata"),
+    let metadata = fs::metadata(reference_to_file_path).map_err(|e| match e.kind() {
+        ErrorKind::NotFound => FreError::FileError(Rc::clone(&file_path), "File not found"),
+        _ => FreError::FileError(Rc::clone(&file_path), "Can't get file metadata"),
     })?;
 
     // If the given path is a directory:
     if metadata.is_dir() {
-        return Err(FreError::FileError(file_path.clone(), "Is a directory"));
+        return Err(FreError::FileError(Rc::clone(&file_path), "Is a directory"));
     }
 
     // Get the file contents:
-    let mut file_contents = fs::read_to_string(file_path).map_err(|e| match e.kind() {
-        ErrorKind::InvalidData => FreError::InvalidData(file_path.clone()),
-        ErrorKind::NotFound => FreError::FileError(file_path.clone(), "File not found"),
-        _ => FreError::FileError(file_path.clone(), "Error while reading file contents"),
-    })?;
+    let mut file_contents =
+        fs::read_to_string(reference_to_file_path).map_err(|e| match e.kind() {
+            ErrorKind::InvalidData => FreError::InvalidData(Rc::clone(&file_path)),
+            ErrorKind::NotFound => FreError::FileError(Rc::clone(&file_path), "File not found"),
+            _ => FreError::FileError(Rc::clone(&file_path), "Error while reading file contents"),
+        })?;
 
     // -d flag is set:
     if delete {
@@ -49,13 +54,13 @@ pub fn transform_file_contents(
 
     // -e flag is set:
     if edit {
-        fs::write(file_path, file_contents).map_err(|e| match e.kind() {
-            ErrorKind::InvalidData => FreError::InvalidData(file_path.clone()),
-            ErrorKind::NotFound => FreError::FileError(file_path.clone(), "File not found"),
+        fs::write(reference_to_file_path, file_contents).map_err(|e| match e.kind() {
+            ErrorKind::InvalidData => FreError::InvalidData(Rc::clone(&file_path)),
+            ErrorKind::NotFound => FreError::FileError(Rc::clone(&file_path), "File not found"),
             ErrorKind::PermissionDenied => {
-                FreError::FileError(file_path.clone(), "Premission denied")
+                FreError::FileError(Rc::clone(&file_path), "Premission denied")
             }
-            _ => FreError::FileError(file_path.clone(), "Error while reading file contents"),
+            _ => FreError::FileError(Rc::clone(&file_path), "Error while reading file contents"),
         })?;
     } else {
         println!("{}", file_contents);
@@ -69,19 +74,20 @@ pub fn transform_file_contents(
 ///     * path: Path to the directory.
 ///     * full: If true will recursively collect the file paths from all the subdirectories too.
 ///     Otherwise it will print 'fre: \<path\>: is directory'.
-pub fn collect_files(path: &OsString, full: bool) -> Result<Vec<OsString>, FreError> {
-    let dir = fs::read_dir(path).map_err(|e| match e.kind() {
-        ErrorKind::InvalidInput => FreError::DirError(path.clone(), "Not a directory"),
-        _ => FreError::DirError(path.clone(), "Error while reading directory"),
+pub fn collect_files(path: Rc<OsString>, full: bool) -> Result<Vec<Rc<OsString>>, FreError> {
+    let dir = fs::read_dir(&(*path)).map_err(|e| match e.kind() {
+        ErrorKind::InvalidInput => FreError::DirError(Rc::clone(&path), "Not a directory"),
+        _ => FreError::DirError(Rc::clone(&path), "Error while reading directory"),
     })?;
 
-    let mut files: Vec<OsString> = vec![];
+    let mut files: Vec<Rc<OsString>> = vec![];
     for entry in dir {
-        let entry = entry.map_err(|_| FreError::FileError(path.clone(), "Unable to get entry"))?;
-        let entry_path = entry.path().as_os_str().to_os_string();
+        let entry =
+            entry.map_err(|_| FreError::FileError(Rc::clone(&path), "Unable to get entry"))?;
+        let entry_path = Rc::new(entry.path().as_os_str().to_os_string());
         let entry_type = entry
             .file_type()
-            .map_err(|_| FreError::FileError(entry_path.clone(), "Unable to get file type"))?;
+            .map_err(|_| FreError::FileError(Rc::clone(&path), "Unable to get file type"))?;
 
         if entry_type.is_dir() {
             if !full {
@@ -89,7 +95,7 @@ pub fn collect_files(path: &OsString, full: bool) -> Result<Vec<OsString>, FreEr
             }
             // -rf flag is set:
             else {
-                files.extend(collect_files(&entry_path, full)?);
+                files.extend(collect_files(entry_path, full)?);
             }
         } else {
             files.push(entry_path);

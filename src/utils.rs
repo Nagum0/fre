@@ -104,3 +104,16 @@ pub fn collect_files(path: Rc<OsString>, full: bool) -> Result<Vec<Rc<OsString>>
 
     Ok(files)
 }
+
+pub fn help() {
+    println!("Usage: \n\n  fre [OPTIONS...] <pattern> <replace> <path>");
+    println!("  fre <pattern> [OPTIONS...] <replace> <path>");
+    println!("  fre <pattern> <replace> [OPTIONS...] <path>");
+    println!("  fre <pattern> <replace> <path> [OPTIONS...]");
+    println!("");
+    println!("  -r\n\tRecursive (Recusively go through each file in the given directory.)");
+    println!("  -rf\n\tRecursive Full (Recusively go through each file in the given directory and its subdirectories.)");
+    println!("  -e\n\tEdit (Replace each matched pattern with the given text in place. Without this flag the result won't take effect in a file it will only print the result to stdout.)");
+    println!("  -d\n\tDelete (Delete all lines where the pattern matches.)");
+    println!("  --help\n\tPrints out the usage information.");
+}

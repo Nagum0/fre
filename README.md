@@ -25,3 +25,5 @@
   - Edit (Replace each matched pattern with the given text in place. Without this flag the result won't take effect in a file it will only print the result to stdout.)
 - -d
   - Delete (Delete all lines where the pattern matches.)
+- --help
+  - Prints out the usage information.

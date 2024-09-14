@@ -4,7 +4,7 @@ pub mod utils;
 
 use config::Config;
 use fre_error::FreError;
-use std::{env, ffi::OsString, rc::Rc};
+use std::{env, ffi::OsString, process::exit, rc::Rc};
 
 /// The path wrapped in an Rc because later I will need to copy the path for errors
 /// which would make everything expensive.
@@ -41,6 +41,10 @@ impl Fre {
                     "-rf" => fre.config.recursive_full = true,
                     "-e" => fre.config.edit = true,
                     "-d" => fre.config.delete = true,
+                    "--help" => {
+                        utils::help();
+                        exit(0);
+                    }
                     _ => return Err(FreError::UnknownFlagError(arg)),
                 }
             }
